@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 )
 
 type config struct {
 	regex   string
+	term string
+	terms string
 	timeout int
 	url     string
 }
@@ -17,11 +20,14 @@ type config struct {
 type ghost struct {
 	client *http.Client
 	config config
+	query  interface{}
 }
 
 func main() {
 	var config config
 	flag.StringVar(&config.regex, "r", "", "regex pattern for searching")
+	flag.StringVar(&config.term, "term", "", "term or phrase for searching")
+	flag.StringVar(&config.terms, "terms", "", "file containing term list for searching")
 	flag.IntVar(&config.timeout, "t", 0, "timeout in milliseconds")
 	flag.StringVar(&config.url, "u", "", "url for searching")
 	flag.Parse()
@@ -33,10 +39,13 @@ func main() {
 	}
 
 	g.client = g.makeClient(config.timeout)
+	g.query = regexp.MustCompile(config.regex)
 
 	if config.url == "" {
 		log.Fatal("search url must be provided")
 	}
+
+	g.getQuery()
 
 	const snapPrefix = "http://web.archive.org/cdx/search/cdx?output=json&url="
 	u := fmt.Sprintf("%s%s", snapPrefix, config.url)
@@ -63,8 +72,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		// here's where parsing happens
-		fmt.Println(string(page))
+		g.parsePage(string(page), g.query)
 	}
 
 	fmt.Printf("took: %f seconds\n", time.Since(start).Seconds())

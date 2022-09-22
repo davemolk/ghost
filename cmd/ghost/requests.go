@@ -80,7 +80,7 @@ func (g *ghost) getData(url string, client *http.Client) ([]byte, error) {
 	return body, nil
 }
 
-// getSnaps takes in a byte slice and unmarshals it, returning the 
+// getSnaps takes in a byte slice and unmarshals it, returning the
 // snapshots from the wayback machine in a slice.
 func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 	var snaps [][]string
