@@ -10,6 +10,9 @@ import (
 	"sync"
 )
 
+// parsePage takes in a page and searches its contents for whatever
+// query the user submitted (regular expression, a single search term,
+// or a list of terms supplied in a .txt file).
 func (g *ghost) parsePage(page string, query interface{}) {
 	seen := make(map[string]bool)
 
@@ -17,7 +20,7 @@ func (g *ghost) parsePage(page string, query interface{}) {
 	case *regexp.Regexp:
 		results := q.FindAllString(string(page), -1)
 		if results == nil {
-			fmt.Println("no matches found")
+			fmt.Printf("failed to find %v\n", q)
 			return
 		}
 		for _, v := range results {
@@ -28,7 +31,7 @@ func (g *ghost) parsePage(page string, query interface{}) {
 			fmt.Println(v)
 		}
 	case string:
-		if strings.Contains(page, q) {
+		if len(q) > 0 && strings.Contains(page, q) {
 			fmt.Printf("found %s\n", q)
 		} else {
 			fmt.Printf("failed to find %s\n", q)

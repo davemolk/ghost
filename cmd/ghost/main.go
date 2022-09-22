@@ -72,6 +72,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+		
 		g.parsePage(string(page), g.query)
 	}
 

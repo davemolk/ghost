@@ -91,5 +91,7 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 	if len(snaps) == 0 {
 		return nil, errors.New("no snapshots available from wayback machine")
 	}
+
+	g.writeJSON("snaps.txt", data)
 	return snaps[1:], nil
 }
