@@ -28,9 +28,10 @@ type filters struct {
 }
 
 type ghost struct {
-	client *http.Client
-	config config
-	query  interface{}
+	client   *http.Client
+	config   config
+	query    interface{}
+	searches *searchMap
 }
 
 func main() {
@@ -51,13 +52,16 @@ func main() {
 
 	start := time.Now()
 
+	searches := newSearchMap()
+
 	g := &ghost{
-		config: config,
+		config:   config,
+		searches: searches,
 	}
 
 	g.client = g.makeClient(config.timeout)
 	g.query = regexp.MustCompile(config.regex)
-	
+
 	tokens := make(chan struct{}, config.gophers)
 
 	if config.url == "" {
@@ -66,7 +70,7 @@ func main() {
 
 	g.getQuery()
 	u := g.formURL(config.url, config.filters.from, config.filters.to, config.filters.limit, config.filters.statuscode)
-	
+
 	body, err := g.getData(u, g.client)
 	if err != nil {
 		log.Fatal(err)
@@ -93,16 +97,16 @@ func main() {
 			page, err := g.getData(url, g.client)
 			if err != nil {
 				log.Printf("error within getData for %s: %v\n", url, err)
-				<- tokens
+				<-tokens
 				return
 			}
-			<- tokens
-			g.parsePage(string(page), g.query)
+			<-tokens
+			g.parsePage(string(page), url, g.query)
 		}(u)
 	}
-	
+
 	wg.Wait()
 
-
+	fmt.Println(g.searches.searches)
 	fmt.Printf("took: %f seconds\n", time.Since(start).Seconds())
 }

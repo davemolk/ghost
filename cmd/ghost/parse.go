@@ -11,7 +11,7 @@ import (
 // parsePage takes in a page and searches its contents for whatever
 // query the user submitted (regular expression, a single search term,
 // or a list of terms supplied in a .txt file).
-func (g *ghost) parsePage(page string, query interface{}) {
+func (g *ghost) parsePage(page, url string, query interface{}) {
 	seen := make(map[string]bool)
 
 	switch q := query.(type) {
@@ -26,11 +26,11 @@ func (g *ghost) parsePage(page string, query interface{}) {
 				continue
 			}
 			seen[v] = true
-			fmt.Println(v)
+			g.searches.store(v, url)
 		}
 	case string:
 		if len(q) > 0 && strings.Contains(page, q) {
-			fmt.Printf("found %s\n", q)
+			g.searches.store(q, url)
 		} else if len(q) > 0 {
 			fmt.Printf("failed to find %s\n", q)
 		} else {
@@ -43,7 +43,7 @@ func (g *ghost) parsePage(page string, query interface{}) {
 			go func(t string) {
 				defer wg.Done()
 				if strings.Contains(page, t) {
-					fmt.Printf("found %s\n", t)
+					g.searches.store(t, url)
 				} else {
 					fmt.Printf("failed to find %s\n", t)
 				}
@@ -51,4 +51,26 @@ func (g *ghost) parsePage(page string, query interface{}) {
 		}
 		wg.Wait()
 	}
+}
+
+// searchMap is a mutex-protected map that stores query results
+// as query: url(s).
+type searchMap struct {
+	mu       sync.Mutex
+	searches map[string][]string // query: url(s)
+}
+
+// newSearchMap returns a pointer to a new searchMap.
+func newSearchMap() *searchMap {
+	return &searchMap{
+		searches: make(map[string][]string),
+	}
+}
+
+// store takes in a term and a url where it was found, locks
+// the searchMap, stores the information, and unlocks the searchMap.
+func (s *searchMap) store(term, url string) {
+	s.mu.Lock()
+	s.searches[term] = append(s.searches[term], url)
+	s.mu.Unlock()
 }
