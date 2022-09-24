@@ -74,7 +74,7 @@ func (g *ghost) getData(url string, client *http.Client) ([]byte, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read body error: %w", err)
+		return nil, fmt.Errorf("unable to read response body: %w", err)
 	}
 
 	return body, nil
@@ -89,10 +89,10 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 		return nil, fmt.Errorf("unmarshal error: %w", err)
 	}
 	if len(snaps) == 0 {
-		return nil, errors.New("no wayback machine snapshots available. If using limit=-1, try limit=-2")
+		return nil, errors.New("no wayback machine snapshots found. If using limit=-1, try limit=-2")
 	}
 
-	g.writeJSON("snaps.txt", data)
+	g.writeJSON("snaps.json", data)
 
 	// leave off the key
 	return snaps[1:], nil

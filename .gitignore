@@ -1,6 +1,10 @@
 notes.md
 terms.txt
 snaps.txt
+snaps.json
+regexResults.json
+termResults.json
+termsResults.json
 # Binaries for programs and plugins
 *.exe
 *.exe~

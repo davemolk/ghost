@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"sync"
@@ -18,23 +16,21 @@ func (g *ghost) parsePage(page, url string, query interface{}) {
 	case *regexp.Regexp:
 		results := q.FindAllString(string(page), -1)
 		if results == nil {
-			fmt.Printf("failed to find %v\n", q)
+			g.infoLog.Printf("Failed to find %v\n", q)
 			return
 		}
-		for _, v := range results {
-			if seen[v] {
+		for _, result := range results {
+			if seen[result] {
 				continue
 			}
-			seen[v] = true
-			g.searches.store(v, url)
+			seen[result] = true
+			g.searches.store(result, url)
 		}
 	case string:
 		if len(q) > 0 && strings.Contains(page, q) {
 			g.searches.store(q, url)
-		} else if len(q) > 0 {
-			fmt.Printf("failed to find %s\n", q)
 		} else {
-			log.Println("no search query specified")
+			g.infoLog.Printf("Failed to find %s\n", q)
 		}
 	case []string:
 		var wg sync.WaitGroup
@@ -45,7 +41,7 @@ func (g *ghost) parsePage(page, url string, query interface{}) {
 				if strings.Contains(page, t) {
 					g.searches.store(t, url)
 				} else {
-					fmt.Printf("failed to find %s\n", t)
+					g.infoLog.Printf("Failed to find %s\n", t)
 				}
 			}(term)
 		}
@@ -57,7 +53,7 @@ func (g *ghost) parsePage(page, url string, query interface{}) {
 // as query: url(s).
 type searchMap struct {
 	mu       sync.Mutex
-	searches map[string][]string // query: url(s)
+	searches map[string][]string
 }
 
 // newSearchMap returns a pointer to a new searchMap.

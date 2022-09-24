@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 )
@@ -13,36 +13,65 @@ import (
 func (g *ghost) writeJSON(name string, data []byte) {
 	f, err := os.Create(name)
 	if err != nil {
-		log.Println(err)
+		g.errorLog.Println(err)
 		return
 	}
 	defer f.Close()
+
 	_, err = f.Write(data)
 	if err != nil {
-		log.Println(err)
+		g.errorLog.Println(err)
 		return
 	}
 	err = f.Sync()
 	if err != nil {
-		log.Println(err)
+		g.errorLog.Println(err)
 	}
+}
+
+// searchMapWriter determines a file name based on the query type, marshals
+// the searchMap, and then calls writeJSON.
+func (g *ghost) searchMapWriter(query interface{}, data map[string][]string) {
+	var name string
+	switch query.(type) {
+	case string:
+		name = "termResults.json"
+	case []string:
+		name = "termsResults.json"
+	case *regexp.Regexp:
+		name = "regexResults.json"
+	}
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		g.errorLog.Printf("Marshal error: %v\n", err)
+		return
+	}
+
+	g.writeJSON(name, b)
+
 }
 
 // getQuery checks whether the user has submitted a search term flag, a
 // regex flag, or a file input flag and creates the query accordingly.
-func (g *ghost) getQuery() {
-	if len(g.config.regex) > 0 {
+func (g *ghost) getQuery() bool {
+	switch {
+	case len(g.config.regex) > 0:
 		g.query = regexp.MustCompile(g.config.regex)
-	} else if len(g.config.terms) > 0 {
+		return true
+	case len(g.config.terms) > 0:
 		query, err := g.readInputFile(g.config.terms)
 		if err != nil {
-			log.Fatal("unable to read input file")
+			g.errorLog.Fatal("Unable to read input file")
 		}
 		g.query = query
-	} else if len(g.config.term) > 0 {
+		return true
+	case len(g.config.term) > 0:
 		g.query = g.config.term
-	} else {
-		log.Println("note: no query supplied")
+		return true
+	default:
+		g.errorLog.Println("No query submitted.")
+		return false
 	}
 }
 
@@ -58,6 +87,7 @@ func (g *ghost) formURL(url, from, to string, limit, statuscode int) string {
 // to a string slice, returning that and any errors.
 func (g *ghost) readInputFile(name string) ([]string, error) {
 	var lines []string
+
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err

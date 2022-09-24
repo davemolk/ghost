@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
+	"os"
 	"sync"
 	"time"
 )
@@ -30,55 +30,63 @@ type filters struct {
 type ghost struct {
 	client   *http.Client
 	config   config
+	errorLog *log.Logger
+	infoLog  *log.Logger
 	query    interface{}
 	searches *searchMap
 }
 
 func main() {
 	var config config
-	flag.IntVar(&config.gophers, "g", 10, "number of goroutines to run")
+	flag.IntVar(&config.gophers, "g", 10, "number of goroutines to use (default is 10)")
 	flag.StringVar(&config.regex, "r", "", "regex pattern for searching")
 	flag.StringVar(&config.term, "term", "", "term or phrase for searching")
 	flag.StringVar(&config.terms, "terms", "", "file containing term list for searching")
-	flag.IntVar(&config.timeout, "time", 0, "timeout in milliseconds")
+	flag.IntVar(&config.timeout, "time", 5000, "timeout in milliseconds (default is 5000)")
 	flag.StringVar(&config.url, "u", "", "url for searching")
 
-	flag.StringVar(&config.filters.from, "f", "", "include at least a year. for more specific queries, use format: yyyyMMddhhmmss")
-	flag.IntVar(&config.filters.limit, "l", 0, "-1 for most recent, 1 for oldest")
-	flag.IntVar(&config.filters.statuscode, "s", 200, "filter results by status code")
-	flag.StringVar(&config.filters.to, "t", "", "include at least a year. for more specific queries, use format: yyyyMMddhhmmss")
+	flag.StringVar(&config.filters.from, "f", "", "search from here, including at least a year. for more specific queries, use format: yyyyMMddhhmmss")
+	flag.IntVar(&config.filters.limit, "l", 0, "limit query results, using -1, -2, -3 etc. for most recent, 1, 2, 3 etc. for oldest")
+	flag.IntVar(&config.filters.statuscode, "s", 200, "filter results by status code (default is 200)")
+	flag.StringVar(&config.filters.to, "t", "", "search to here, including at least a year. for more specific queries, use format: yyyyMMddhhmmss")
 
 	flag.Parse()
 
 	start := time.Now()
 
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ltime|log.Lshortfile)
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ltime)
 	searches := newSearchMap()
 
 	g := &ghost{
 		config:   config,
+		errorLog: errorLog,
+		infoLog:  infoLog,
 		searches: searches,
 	}
 
-	g.client = g.makeClient(config.timeout)
-	g.query = regexp.MustCompile(config.regex)
-
-	tokens := make(chan struct{}, config.gophers)
-
 	if config.url == "" {
-		log.Fatal("search url must be provided")
+		g.errorLog.Fatal("URL must be provided")
 	}
 
-	g.getQuery()
+	validQuery := g.getQuery()
 	u := g.formURL(config.url, config.filters.from, config.filters.to, config.filters.limit, config.filters.statuscode)
+
+	g.client = g.makeClient(config.timeout)
 
 	body, err := g.getData(u, g.client)
 	if err != nil {
-		log.Fatal(err)
+		g.errorLog.Fatal(err)
 	}
 
+	// also saves the snaps to a .json file
 	snaps, err := g.getSnaps(body)
 	if err != nil {
-		fmt.Println(err)
+		g.errorLog.Fatal(err)
+	}
+
+	if !validQuery {
+		g.infoLog.Fatal("Snapshots retrieved and saved to file. Exiting...")
 	}
 
 	// extract timestamps from snaps
@@ -88,25 +96,27 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	for _, u := range filteredSnaps {
+	tokens := make(chan struct{}, config.gophers)
+
+	for _, timestamp := range filteredSnaps {
 		tokens <- struct{}{}
 		wg.Add(1)
-		go func(url string) {
+		go func(t string) {
 			defer wg.Done()
-			url = fmt.Sprintf("https://web.archive.org/web/%s/%s", url, config.url)
+			url := fmt.Sprintf("https://web.archive.org/web/%s/%s", t, config.url)
 			page, err := g.getData(url, g.client)
 			if err != nil {
-				log.Printf("error within getData for %s: %v\n", url, err)
+				g.errorLog.Printf("getData error for %s: %v\n", url, err)
 				<-tokens
 				return
 			}
 			<-tokens
 			g.parsePage(string(page), url, g.query)
-		}(u)
+		}(timestamp)
 	}
-
 	wg.Wait()
 
-	fmt.Println(g.searches.searches)
+	g.searchMapWriter(g.query, g.searches.searches)
+
 	fmt.Printf("took: %f seconds\n", time.Since(start).Seconds())
 }
