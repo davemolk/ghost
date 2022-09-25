@@ -5,6 +5,7 @@ snaps.json
 regexResults.json
 termResults.json
 termsResults.json
+allResources.json
 # Binaries for programs and plugins
 *.exe
 *.exe~

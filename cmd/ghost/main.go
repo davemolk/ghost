@@ -39,16 +39,16 @@ type ghost struct {
 func main() {
 	var config config
 	flag.IntVar(&config.gophers, "g", 10, "number of goroutines to use (default is 10)")
-	flag.StringVar(&config.regex, "r", "", "regex pattern for searching")
-	flag.StringVar(&config.term, "term", "", "term or phrase for searching")
-	flag.StringVar(&config.terms, "terms", "", "file containing term list for searching")
+	flag.StringVar(&config.regex, "r", "", "regex pattern for parsing search results")
+	flag.StringVar(&config.term, "term", "", "term or phrase for parsing search results")
+	flag.StringVar(&config.terms, "terms", "", "name of file containing term list for parsing search results")
 	flag.IntVar(&config.timeout, "time", 5000, "timeout in milliseconds (default is 5000)")
 	flag.StringVar(&config.url, "u", "", "url for searching")
 
-	flag.StringVar(&config.filters.from, "f", "", "search from here, including at least a year. for more specific queries, use format: yyyyMMddhhmmss")
+	flag.StringVar(&config.filters.from, "f", "", "search from here, including at least a year. format more specific queries as yyyyMMddhhmmss")
 	flag.IntVar(&config.filters.limit, "l", 0, "limit query results, using -1, -2, -3 etc. for most recent, 1, 2, 3 etc. for oldest")
 	flag.IntVar(&config.filters.statuscode, "s", 200, "filter results by status code (default is 200)")
-	flag.StringVar(&config.filters.to, "t", "", "search to here, including at least a year. for more specific queries, use format: yyyyMMddhhmmss")
+	flag.StringVar(&config.filters.to, "t", "", "search to here, including at least a year. format more specific queries as yyyyMMddhhmmss")
 
 	flag.Parse()
 
@@ -74,6 +74,11 @@ func main() {
 
 	g.client = g.makeClient(config.timeout)
 
+	// get all captured resources for URL prefix
+	done := make(chan bool)
+	go g.getResources(g.client, config.url, done)
+
+	// check Wayback Machine
 	body, err := g.getData(u, g.client)
 	if err != nil {
 		g.errorLog.Fatal(err)
@@ -117,6 +122,9 @@ func main() {
 	wg.Wait()
 
 	g.searchMapWriter(g.query, g.searches.searches)
+
+	// make sure getResources has finished
+	<- done
 
 	fmt.Printf("took: %f seconds\n", time.Since(start).Seconds())
 }

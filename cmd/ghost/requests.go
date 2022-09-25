@@ -80,7 +80,7 @@ func (g *ghost) getData(url string, client *http.Client) ([]byte, error) {
 	return body, nil
 }
 
-// getSnaps takes in a byte slice (obtained from the cdx server), unmarshals
+// getSnaps takes in a byte slice (obtained from the CDX server), unmarshals
 // it, and returns the wayback machine snapshots in a slice.
 func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 	var snaps [][]string
@@ -96,4 +96,21 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 
 	// leave off the key
 	return snaps[1:], nil
+}
+
+// getResources leverages the Wayback Machine API responsible for populating
+// all captured URLs associated with a given URL prefix. The data is written
+// to an allResources.json file.
+func (g *ghost) getResources(client *http.Client, url string, done chan bool) {
+	now := time.Now()
+	curr := now.UnixMilli()
+	const guts = "&matchType=prefix&collapse=urlkey&output=json&fl=original%2Cmimetype%2Ctimestamp%2Cendtimestamp%2Cgroupcount%2Cuniqcount&filter=!statuscode%3A%5B45%5D..&limit=10000&_="
+	u := fmt.Sprintf("https://web.archive.org/web/timemap/json?url=%s%s%d", url, guts, curr)
+	body, err := g.getData(u, client)
+	if err != nil {
+		g.errorLog.Printf("getResources unsuccessful: %v", err)
+		done <- true
+	}
+	g.writeJSON("allResources.json", body)
+	done <- true
 }
