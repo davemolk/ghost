@@ -6,10 +6,9 @@
 Get and parse a URL's Wayback Machine history with ghost.
 
 ## Overview
-* // FINISH
-* Use -term, -regex, and -terms, respectively, to scan each page for a specific word, with a regular expression, or with a list of words (input as a .txt file).
-* Search results are written to a JSON file.
-* ghost also collects every URL archived by Wayback Machine (within the specified date range) and writes them to a JSON file.
+* Supply a URL and get a file containing all archived snapshots and another containing all archived links for that URL prefix. Add a query to search each snapshot. Search results are written to a additional file.
+* Use -term, -regex, and -terms, respectively, to scan each page for a specific word, a list of words (input as a .txt file), or with a regular expression.
+* Customize your search with advanced query filtering and URL matching based on different parameters.
 * See [here](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server) for more details on the Wayback cdx server.
 
 ## Example Usage
@@ -48,6 +47,15 @@ Usage of ghost:
         Filter results by status code (default is 200).
   -t string
     	Search to here, including at least a year. Format more specific queries as yyyyMMddhhmmss.
+
+(match scope)
+  -domain string
+        Return results from host and all subhosts (inactive by default).
+  -host string
+        Return results from host (inactive by default).
+  -prefx string
+        Return results for all results under the path (inactive by default).
+
 ```
 
 ## Installation
