@@ -51,6 +51,7 @@ func main() {
 	flag.IntVar(&config.timeout, "time", 5000, "timeout in milliseconds (default is 5000).")
 	flag.StringVar(&config.url, "u", "", "url for searching")
 
+	// filtering Wayback Machine results
 	flag.StringVar(&config.filters.from, "f", "", "search from here, including at least a year. format more specific queries as yyyyMMddhhmmss.")
 	flag.StringVar(&config.filters.limit, "l", "0", "limit query results, using -1, -2, -3 etc. for most recent, 1, 2, 3 etc. for oldest.")
 	flag.StringVar(&config.filters.mimetype, "m", "text/html", "filter results according to mimetype (default is 'text/html').")
@@ -59,6 +60,7 @@ func main() {
 	flag.StringVar(&config.filters.statuscode, "s", "200", "filter results by status code (default is 200).")
 	flag.StringVar(&config.filters.to, "t", "", "search to here, including at least a year. format more specific queries as yyyyMMddhhmmss.")
 
+	// matchType
 	flag.StringVar(&config.filters.domain, "domain", "", "return results from host and all subhosts.")
 	flag.StringVar(&config.filters.host, "host", "", "return results from host.")
 	flag.StringVar(&config.filters.prefix, "prefix", "", "return results for all results under the path.")

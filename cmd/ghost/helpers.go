@@ -8,7 +8,7 @@ import (
 	"regexp"
 )
 
-// writeJSON takes in a byte slice and file name and writes
+// writeJSON takes in a file name and a byte slice and writes
 // the contents to a .txt file.
 func (g *ghost) writeJSON(name string, data []byte) {
 	g.infoLog.Printf("Writing %s", name)
@@ -30,8 +30,8 @@ func (g *ghost) writeJSON(name string, data []byte) {
 	}
 }
 
-// searchMapWriter determines a file name based on the query type, marshals
-// the searchMap, and then calls writeJSON.
+// searchMapWriter takes in a query and a map of data, marshals
+// the data, and then calls writeJSON to save the results to a JSON file.
 func (g *ghost) searchMapWriter(query interface{}, data map[string][]string) {
 	var name string
 	switch query.(type) {
@@ -54,7 +54,7 @@ func (g *ghost) searchMapWriter(query interface{}, data map[string][]string) {
 }
 
 // getQuery checks whether the user has submitted a search term flag, a
-// regex flag, or a file input flag and creates the query accordingly.
+// regexp flag, or a file input flag and creates the query accordingly.
 func (g *ghost) getQuery() bool {
 	switch {
 	case len(g.config.regex) > 0:

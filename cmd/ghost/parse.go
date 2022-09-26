@@ -49,8 +49,8 @@ func (g *ghost) parsePage(page, url string, query interface{}) {
 	}
 }
 
-// searchMap is a mutex-protected map that stores query results
-// as query: url(s).
+// searchMap is a mutex-protected map that stores the search results
+// in the key-value form query: url(s).
 type searchMap struct {
 	mu       sync.Mutex
 	searches map[string][]string
