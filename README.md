@@ -85,3 +85,5 @@ Alternatively, use one of the binaries available in the release.
 
 ## License
 * ghost is released under the MIT license. See [LICENSE](LICENSE) for details.
+
+### ...the latch was left unhooked...

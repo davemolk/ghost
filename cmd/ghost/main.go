@@ -21,16 +21,16 @@ type config struct {
 }
 
 type filters struct {
-	domain string
-	from       string
-	host string
-	limit      string
-	mimetype string
-	notMimetype string
+	domain        string
+	from          string
+	host          string
+	limit         string
+	mimetype      string
+	notMimetype   string
 	notStatusCode string
-	prefix string
-	statuscode string
-	to         string
+	prefix        string
+	statuscode    string
+	to            string
 }
 
 type ghost struct {
@@ -105,7 +105,7 @@ func main() {
 	}
 
 	if !validQuery {
-		<- done
+		<-done
 		g.infoLog.Fatal("Snapshots retrieved and saved to file. Exiting...")
 	}
 
@@ -139,7 +139,7 @@ func main() {
 	g.searchMapWriter(g.query, g.searches.searches)
 
 	// make sure getResources has finished
-	<- done
+	<-done
 
 	fmt.Printf("Took: %f seconds\n", time.Since(start).Seconds())
 }
