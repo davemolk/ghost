@@ -23,6 +23,7 @@ type config struct {
 type filters struct {
 	from       string
 	limit      int
+	mimetype string
 	statuscode int
 	to         string
 }
@@ -47,6 +48,7 @@ func main() {
 
 	flag.StringVar(&config.filters.from, "f", "", "search from here, including at least a year. format more specific queries as yyyyMMddhhmmss")
 	flag.IntVar(&config.filters.limit, "l", 0, "limit query results, using -1, -2, -3 etc. for most recent, 1, 2, 3 etc. for oldest")
+	flag.StringVar(&config.filters.mimetype, "m", "text/html", "filter results according to mimetype (default is 'text/html')")
 	flag.IntVar(&config.filters.statuscode, "s", 200, "filter results by status code (default is 200)")
 	flag.StringVar(&config.filters.to, "t", "", "search to here, including at least a year. format more specific queries as yyyyMMddhhmmss")
 
@@ -66,17 +68,18 @@ func main() {
 	}
 
 	if config.url == "" {
-		g.errorLog.Fatal("URL must be provided")
+		g.getInputURL()
 	}
 
 	validQuery := g.getQuery()
-	u := g.formURL(config.url, config.filters.from, config.filters.to, config.filters.limit, config.filters.statuscode)
+	u := g.formURL(g.config.url, config.filters.mimetype, config.filters.from, config.filters.to, config.filters.limit, config.filters.statuscode)
+	g.infoLog.Printf("URL for Wayback Machine: %s\n", u)
 
 	g.client = g.makeClient(config.timeout)
 
 	// get all captured resources for URL prefix
 	done := make(chan bool)
-	go g.getResources(g.client, config.url, done)
+	go g.getResources(g.client, g.config.url, done)
 
 	// check Wayback Machine
 	body, err := g.getData(u, g.client)
@@ -91,6 +94,7 @@ func main() {
 	}
 
 	if !validQuery {
+		<- done
 		g.infoLog.Fatal("Snapshots retrieved and saved to file. Exiting...")
 	}
 
@@ -108,7 +112,7 @@ func main() {
 		wg.Add(1)
 		go func(t string) {
 			defer wg.Done()
-			url := fmt.Sprintf("https://web.archive.org/web/%s/%s", t, config.url)
+			url := fmt.Sprintf("https://web.archive.org/web/%s/%s", t, g.config.url)
 			page, err := g.getData(url, g.client)
 			if err != nil {
 				g.errorLog.Printf("getData error for %s: %v\n", url, err)

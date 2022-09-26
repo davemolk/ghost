@@ -8,8 +8,9 @@ Get and parse a URL's Wayback Machine history with ghost.
 ## Overview
 * // FINISH
 * Use -term, -regex, and -terms, respectively, to scan each page for a specific word, with a regular expression, or with a list of words (input as a .txt file).
-* Search results are written to a .json file.
-* ghost also collects every URL archived by Wayback Machine (within the specified date range) and writes them to a .json file.
+* Search results are written to a JSON file.
+* ghost also collects every URL archived by Wayback Machine (within the specified date range) and writes them to a JSON file.
+* See [here](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server) for more details on the Wayback cdx server.
 
 ## Example Usage
 ```
@@ -37,6 +38,8 @@ Usage of ghost:
     	Search from here, including at least a year. Format more specific queries as yyyyMMddhhmmss.
   -l int
     	Limit query results, using -1, -2, -3 etc. for most recent and 1, 2, 3 etc. for oldest.
+  -m string
+        Filter results according to mimetype (default is 'text/html').
   -s int
         Filter results by status code (default is 200).
   -t string
@@ -50,6 +53,7 @@ Then run this command to download + compile ghost:
 ```
 go install github.com/davemolk/ghost/cmd/ghost@latest
 ```
+Alternatively, use one of the binaries available in the release.
 
 ## Additional Notes
 * Occasionally, a limit of -1 erroneously returns no results (this happens with curl and in a browser). If this happens and you know you should be seeing something, use limit of -2.

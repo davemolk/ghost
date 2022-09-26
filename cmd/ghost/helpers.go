@@ -11,6 +11,7 @@ import (
 // writeJSON takes in a byte slice and file name and writes
 // the contents to a .txt file.
 func (g *ghost) writeJSON(name string, data []byte) {
+	g.infoLog.Printf("writing %s", name)
 	f, err := os.Create(name)
 	if err != nil {
 		g.errorLog.Println(err)
@@ -77,9 +78,9 @@ func (g *ghost) getQuery() bool {
 
 // formURL takes in the query parameters and forms the search URL for the
 // CDX server. Including default values of "" doesn't impact the query results.
-func (g *ghost) formURL(url, from, to string, limit, statuscode int) string {
+func (g *ghost) formURL(url, mimetype, from, to string, limit, statuscode int) string {
 	const base = "http://web.archive.org/cdx/search/cdx?output=json"
-	u := fmt.Sprintf("%s&fastLatest=true&url=%s&from=%s&to=%s&limit=%d&filter=statuscode:%d", base, url, from, to, limit, statuscode)
+	u := fmt.Sprintf("%s&fastLatest=true&url=%s&mimetype=%s&from=%s&to=%s&limit=%d&filter=statuscode:%d", base, url, mimetype, from, to, limit, statuscode)
 	return u
 }
 
@@ -99,4 +100,18 @@ func (g *ghost) readInputFile(name string) ([]string, error) {
 		lines = append(lines, s.Text())
 	}
 	return lines, s.Err()
+}
+
+// getInputURL accepts a URL from stdin and sets it to g.config.url.
+func (g *ghost) getInputURL() {
+	s := bufio.NewScanner(os.Stdin)
+	for s.Scan() {
+		g.config.url = s.Text()
+	}
+	if err := s.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "unable to read input: %v", err)
+	}
+	if g.config.url == "" {
+		g.errorLog.Fatal("missing input url")
+	}
 }
