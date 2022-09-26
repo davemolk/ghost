@@ -22,9 +22,11 @@ type config struct {
 
 type filters struct {
 	from       string
-	limit      int
+	limit      string
 	mimetype string
-	statuscode int
+	notMimetype string
+	notStatusCode string
+	statuscode string
 	to         string
 }
 
@@ -47,9 +49,11 @@ func main() {
 	flag.StringVar(&config.url, "u", "", "url for searching")
 
 	flag.StringVar(&config.filters.from, "f", "", "search from here, including at least a year. format more specific queries as yyyyMMddhhmmss")
-	flag.IntVar(&config.filters.limit, "l", 0, "limit query results, using -1, -2, -3 etc. for most recent, 1, 2, 3 etc. for oldest")
+	flag.StringVar(&config.filters.limit, "l", "0", "limit query results, using -1, -2, -3 etc. for most recent, 1, 2, 3 etc. for oldest")
 	flag.StringVar(&config.filters.mimetype, "m", "text/html", "filter results according to mimetype (default is 'text/html')")
-	flag.IntVar(&config.filters.statuscode, "s", 200, "filter results by status code (default is 200)")
+	flag.StringVar(&config.filters.notMimetype, "nm", "", "filter specified mimetype out of results (inactive by default)")
+	flag.StringVar(&config.filters.notStatusCode, "ns", "0", "filter specified status code out of results (inactive by default).")
+	flag.StringVar(&config.filters.statuscode, "s", "200", "filter results by status code (default is 200)")
 	flag.StringVar(&config.filters.to, "t", "", "search to here, including at least a year. format more specific queries as yyyyMMddhhmmss")
 
 	flag.Parse()
@@ -72,8 +76,8 @@ func main() {
 	}
 
 	validQuery := g.getQuery()
-	u := g.formURL(g.config.url, config.filters.mimetype, config.filters.from, config.filters.to, config.filters.limit, config.filters.statuscode)
-	g.infoLog.Printf("URL for Wayback Machine: %s\n", u)
+	u := g.formURL(g.config.url, config.filters.mimetype, config.filters.from, config.filters.to, config.filters.limit, config.filters.statuscode, config.filters.notMimetype, config.filters.notStatusCode)
+	g.infoLog.Printf("Wayback Machine URL: %s\n", u)
 
 	g.client = g.makeClient(config.timeout)
 
@@ -130,5 +134,5 @@ func main() {
 	// make sure getResources has finished
 	<- done
 
-	fmt.Printf("took: %f seconds\n", time.Since(start).Seconds())
+	fmt.Printf("Took: %f seconds\n", time.Since(start).Seconds())
 }

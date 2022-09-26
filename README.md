@@ -36,11 +36,15 @@ Usage of ghost:
 (query filtering)
   -f string
     	Search from here, including at least a year. Format more specific queries as yyyyMMddhhmmss.
-  -l int
+  -l string
     	Limit query results, using -1, -2, -3 etc. for most recent and 1, 2, 3 etc. for oldest.
   -m string
         Filter results according to mimetype (default is 'text/html').
-  -s int
+  -nm string
+        Filter specified mimetype out of results (inactive by default).
+  -ns string
+        Filter specified status code out of results (inactive by default).
+  -s string
         Filter results by status code (default is 200).
   -t string
     	Search to here, including at least a year. Format more specific queries as yyyyMMddhhmmss.
@@ -58,6 +62,7 @@ Alternatively, use one of the binaries available in the release.
 ## Additional Notes
 * Occasionally, a limit of -1 erroneously returns no results (this happens with curl and in a browser). If this happens and you know you should be seeing something, use limit of -2.
 * The query string in formURL contains "fastLatest=true." I haven't noticed an appreciable difference, but it can't hurt, right? See more [here](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server):
+* The query string also contains &collapse=digest, collapsing adjacent digests for less cluttered results.
 
 ## Changelog
 *    **2022-09-26** : ghost

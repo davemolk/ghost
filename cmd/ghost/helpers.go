@@ -11,7 +11,7 @@ import (
 // writeJSON takes in a byte slice and file name and writes
 // the contents to a .txt file.
 func (g *ghost) writeJSON(name string, data []byte) {
-	g.infoLog.Printf("writing %s", name)
+	g.infoLog.Printf("Writing %s", name)
 	f, err := os.Create(name)
 	if err != nil {
 		g.errorLog.Println(err)
@@ -63,7 +63,7 @@ func (g *ghost) getQuery() bool {
 	case len(g.config.terms) > 0:
 		query, err := g.readInputFile(g.config.terms)
 		if err != nil {
-			g.errorLog.Fatal("Unable to read input file")
+			g.errorLog.Fatal("Unable to read input file.")
 		}
 		g.query = query
 		return true
@@ -78,9 +78,19 @@ func (g *ghost) getQuery() bool {
 
 // formURL takes in the query parameters and forms the search URL for the
 // CDX server. Including default values of "" doesn't impact the query results.
-func (g *ghost) formURL(url, mimetype, from, to string, limit, statuscode int) string {
+func (g *ghost) formURL(url, mimetype, from, to, limit, statuscode, notMimetype, notStatusCode string) string {
 	const base = "http://web.archive.org/cdx/search/cdx?output=json"
-	u := fmt.Sprintf("%s&fastLatest=true&url=%s&mimetype=%s&from=%s&to=%s&limit=%d&filter=statuscode:%d", base, url, mimetype, from, to, limit, statuscode)
+	u := fmt.Sprintf("%s&fastLatest=true&url=%s&from=%s&to=%s&limit=%s&collapse=digest", base, url, from, to, limit)
+	if notMimetype != "" {
+		u = fmt.Sprintf("%s&filter=!mimetype:%s", u, notMimetype)
+	} else {
+		u = fmt.Sprintf("%s&filter=mimetype:%s", u, mimetype)
+	}
+	if notStatusCode != "0" {
+		u = fmt.Sprintf("%s&filter=!statuscode:%s", u, notStatusCode)
+	} else {
+		u = fmt.Sprintf("%s&filter=statuscode:%s", u, statuscode)
+	}
 	return u
 }
 
@@ -109,9 +119,9 @@ func (g *ghost) getInputURL() {
 		g.config.url = s.Text()
 	}
 	if err := s.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "unable to read input: %v", err)
+		fmt.Fprintf(os.Stderr, "Unable to read input: %v", err)
 	}
 	if g.config.url == "" {
-		g.errorLog.Fatal("missing input url")
+		g.errorLog.Fatal("Missing input url.")
 	}
 }

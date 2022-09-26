@@ -16,7 +16,7 @@ func (g *ghost) parsePage(page, url string, query interface{}) {
 	case *regexp.Regexp:
 		results := q.FindAllString(string(page), -1)
 		if results == nil {
-			g.infoLog.Printf("Failed to find %v\n", q)
+			g.infoLog.Printf("Failed to find %v.\n", q)
 			return
 		}
 		for _, result := range results {
@@ -30,7 +30,7 @@ func (g *ghost) parsePage(page, url string, query interface{}) {
 		if len(q) > 0 && strings.Contains(page, q) {
 			g.searches.store(q, url)
 		} else {
-			g.infoLog.Printf("Failed to find %s\n", q)
+			g.infoLog.Printf("Failed to find %s.\n", q)
 		}
 	case []string:
 		var wg sync.WaitGroup
@@ -41,7 +41,7 @@ func (g *ghost) parsePage(page, url string, query interface{}) {
 				if strings.Contains(page, t) {
 					g.searches.store(t, url)
 				} else {
-					g.infoLog.Printf("Failed to find %s\n", t)
+					g.infoLog.Printf("Failed to find %s.\n", t)
 				}
 			}(term)
 		}
