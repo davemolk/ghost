@@ -1,17 +1,16 @@
 # ghost
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](http://opensource.org/licenses/MIT)
-// // FINISH go report card here
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/davemolk/ghost/issues)
+Get and parse a URL's Wayback Machine history. Save all archived links for that URL prefix while you're at it.
 
-Get and parse a URL's Wayback Machine history with ghost.
+![demo](ghost.gif)
 
 ## Overview
-* Supply a URL and get a file containing all archived snapshots and another containing all archived links for that URL prefix. Add a query to search each snapshot. Search results are written to a additional file.
+* Supply a URL and get a file containing all archived snapshots and another containing all archived links for that URL prefix. Add a query to search each snapshot. Search results are written to an additional file.
 * Use -term, -regex, and -terms, respectively, to scan each page for a specific word, a list of words (input as a .txt file), or with a regular expression.
 * Customize your search with advanced query filtering and URL matching based on different parameters.
 * See [here](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server) for more details on the Wayback cdx server.
 
 ## Example Usage
+(find the two most recent results from https://go.dev, starting at 9/22/2022 and using a 10-second timeout.)
 ```
 go run ./cmd/ghost -u https://go.dev -f 20220922 -time 10000 -term go -l -2
 ```
@@ -55,7 +54,6 @@ Usage of ghost:
         Return results from host (inactive by default).
   -prefx string
         Return results for all results under the path (inactive by default).
-
 ```
 
 ## Installation
@@ -68,7 +66,7 @@ go install github.com/davemolk/ghost/cmd/ghost@latest
 Alternatively, use one of the binaries available in the release.
 
 ## Additional Notes
-* Occasionally, a limit of -1 erroneously returns no results (this happens with curl and in a browser). If this happens and you know you should be seeing something, use limit of -2.
+* Occasionally, a limit of -1 erroneously returns no results (this also happens with curl and with a browser). If you know you should be seeing something, use limit of -2.
 * The query string in formURL contains "fastLatest=true." I haven't noticed an appreciable difference, but it can't hurt, right? See more [here](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server):
 * The query string also contains &collapse=digest, collapsing adjacent digests for less cluttered results.
 
@@ -86,4 +84,4 @@ Alternatively, use one of the binaries available in the release.
 ## License
 * ghost is released under the MIT license. See [LICENSE](LICENSE) for details.
 
-### ...the latch was left unhooked...
+#### ...the latch was left unhooked...
