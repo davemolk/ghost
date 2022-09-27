@@ -78,27 +78,27 @@ func (g *ghost) getQuery() bool {
 
 // formURL takes in the query parameters and forms the search URL for the
 // CDX server. Including default values of "" doesn't impact the query results.
-func (g *ghost) formURL(url, mimetype, from, to, limit, statuscode, notMimetype, notStatusCode, domain, host, prefix string) string {
+func (g *ghost) formURL(url string, filters filters) string {
 	const base = "http://web.archive.org/cdx/search/cdx?output=json"
-	u := fmt.Sprintf("%s&fastLatest=true&url=%s&from=%s&to=%s&limit=%s&collapse=digest", base, url, from, to, limit)
-	if notMimetype != "" {
-		u = fmt.Sprintf("%s&filter=!mimetype:%s", u, notMimetype)
+	u := fmt.Sprintf("%s&fastLatest=true&url=%s&from=%s&to=%s&limit=%s&collapse=digest", base, url, filters.from, filters.to, filters.limit)
+	if filters.notMimetype != "" {
+		u = fmt.Sprintf("%s&filter=!mimetype:%s", u, filters.notMimetype)
 	} else {
-		u = fmt.Sprintf("%s&filter=mimetype:%s", u, mimetype)
+		u = fmt.Sprintf("%s&filter=mimetype:%s", u, filters.mimetype)
 	}
-	if notStatusCode != "0" {
-		u = fmt.Sprintf("%s&filter=!statuscode:%s", u, notStatusCode)
+	if filters.notStatusCode != "0" {
+		u = fmt.Sprintf("%s&filter=!statuscode:%s", u, filters.notStatusCode)
 	} else {
-		u = fmt.Sprintf("%s&filter=statuscode:%s", u, statuscode)
+		u = fmt.Sprintf("%s&filter=statuscode:%s", u, filters.statuscode)
 	}
-	if domain != "" {
-		u = fmt.Sprintf("%s&matchType=%s", u, domain)
+	if filters.domain != "" {
+		u = fmt.Sprintf("%s&matchType=%s", u, filters.domain)
 	}
-	if host != "" {
-		u = fmt.Sprintf("%s&matchType=%s", u, host)
+	if filters.host != "" {
+		u = fmt.Sprintf("%s&matchType=%s", u, filters.host)
 	}
-	if prefix != "" {
-		u = fmt.Sprintf("%s&matchType=%s", u, prefix)
+	if filters.prefix != "" {
+		u = fmt.Sprintf("%s&matchType=%s", u, filters.prefix)
 	}
 	return u
 }

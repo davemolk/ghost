@@ -44,9 +44,9 @@ type ghost struct {
 
 func main() {
 	var config config
-	flag.IntVar(&config.gophers, "g", 10, "number of goroutines to use (default is 10).")
-	flag.StringVar(&config.regex, "r", "", "regex pattern for parsing search results.")
-	flag.StringVar(&config.term, "term", "", "term or phrase for parsing search results.")
+	flag.IntVar(&config.gophers, "g", 10, "number of goroutines (default is 10).")
+	flag.StringVar(&config.regex, "regex", "", "regex pattern for parsing search results.")
+	flag.StringVar(&config.term, "term", "", "term for parsing search results.")
 	flag.StringVar(&config.terms, "terms", "", "name of file containing term list for parsing search results.")
 	flag.IntVar(&config.timeout, "time", 5000, "timeout in milliseconds (default is 5000).")
 	flag.StringVar(&config.url, "u", "", "url for searching")
@@ -85,7 +85,7 @@ func main() {
 	}
 
 	validQuery := g.getQuery()
-	u := g.formURL(g.config.url, config.filters.mimetype, config.filters.from, config.filters.to, config.filters.limit, config.filters.statuscode, config.filters.notMimetype, config.filters.notStatusCode, config.filters.domain, config.filters.host, config.filters.prefix)
+	u := g.formURL(g.config.url, config.filters)
 	g.infoLog.Printf("Wayback Machine URL: %s\n", u)
 
 	g.client = g.makeClient(config.timeout)
