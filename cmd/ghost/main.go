@@ -84,6 +84,17 @@ func main() {
 		g.getInputURL()
 	}
 
+	var wg sync.WaitGroup
+
+	domain, err := g.getDomain(g.config.url)
+	if err != nil {
+		g.errorLog.Println("91", err)
+	}
+	if domain != "" {
+		wg.Add(1)
+		go g.whoisLookup(&wg, domain, config.timeout)
+	}
+
 	validQuery := g.getQuery()
 	u := g.formURL(g.config.url, config.filters)
 	g.infoLog.Printf("Wayback Machine URL: %s\n", u)
@@ -91,8 +102,8 @@ func main() {
 	g.client = g.makeClient(config.timeout)
 
 	// get all captured resources for URL prefix
-	done := make(chan bool)
-	go g.getResources(g.client, g.config.url, done)
+	wg.Add(1)
+	go g.getResources(&wg, g.client, g.config.url)
 
 	// check Wayback Machine
 	body, err := g.getData(u, g.client)
@@ -107,7 +118,6 @@ func main() {
 	}
 
 	if !validQuery {
-		<-done
 		g.infoLog.Fatal("Snapshots retrieved and saved to file. Exiting...")
 	}
 
@@ -117,7 +127,7 @@ func main() {
 		filteredSnaps = append(filteredSnaps, v[1])
 	}
 
-	var wg sync.WaitGroup
+	// var wg sync.WaitGroup
 	tokens := make(chan struct{}, config.gophers)
 
 	for _, timestamp := range filteredSnaps {
@@ -139,9 +149,6 @@ func main() {
 	wg.Wait()
 
 	g.searchMapWriter(g.query, g.searches.searches)
-
-	// make sure getResources has finished
-	<-done
 
 	fmt.Printf("Took: %f seconds\n", time.Since(start).Seconds())
 }

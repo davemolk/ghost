@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -92,7 +95,9 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 		return nil, errors.New("no wayback machine snapshots found. If using limit=-1, try limit=-2")
 	}
 
-	g.writeJSON("snaps.json", data)
+	g.writeData("snaps.json", data)
+
+	g.infoLog.Printf("found %d snapshot(s)", len(snaps[1:]))
 
 	// leave off the key
 	return snaps[1:], nil
@@ -101,7 +106,8 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 // getResources leverages the Wayback Machine API responsible for populating
 // all captured URLs associated with a given URL prefix. The data is written
 // to an allResources.json file.
-func (g *ghost) getResources(client *http.Client, url string, done chan bool) {
+func (g *ghost) getResources(wg *sync.WaitGroup, client *http.Client, url string) {
+	defer wg.Done()
 	now := time.Now()
 	curr := now.UnixMilli()
 	const guts = "&matchType=prefix&collapse=urlkey&output=json&fl=original%2Cmimetype%2Ctimestamp%2Cendtimestamp%2Cgroupcount%2Cuniqcount&filter=!statuscode%3A%5B45%5D..&limit=10000&_="
@@ -109,8 +115,49 @@ func (g *ghost) getResources(client *http.Client, url string, done chan bool) {
 	body, err := g.getData(u, client)
 	if err != nil {
 		g.errorLog.Printf("getResources unsuccessful: %v", err)
-		done <- true
 	}
-	g.writeJSON("allResources.json", body)
-	done <- true
+	if len(body) > 0 {
+		g.writeData("allResources.json", body)
+	} else {
+		g.errorLog.Println("no resources found via web.archive.org")
+	}
+}
+
+// whoisLookup checks the "whois.iana.org" server to find information about the domain. Any
+// results are then written to "whois.txt" via the writeData function.
+func (g *ghost) whoisLookup(wg *sync.WaitGroup, domain string, timeout int) {
+	defer wg.Done()
+	// incorporate lookup if there eventually becomes a need past iana
+	port := "43"
+	server := "whois.iana.org"
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout) * time.Millisecond)
+	defer cancel()
+	
+	var d = &net.Dialer{}
+	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(server, port))
+	if err != nil {
+		g.errorLog.Printf("whois connection failure: %v\n", err)
+		return
+	}
+
+	defer conn.Close()
+
+	_, err = conn.Write([]byte(domain + "\r\n"))
+	if err != nil {
+		g.errorLog.Printf("send to whois failure: %v\n", err)
+		return
+	}
+
+	buff, err := io.ReadAll(conn)
+	if err != nil {
+		g.errorLog.Printf("whois read failure: %v\n", err)
+		return
+	}
+
+	if len(buff) > 0 {
+		g.writeData("whois.txt", buff)
+	} else {
+		fmt.Println("no results for whois")
+	}
 }

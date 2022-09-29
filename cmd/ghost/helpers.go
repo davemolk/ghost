@@ -4,13 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"regexp"
+	"strings"
 )
 
-// writeJSON takes in a file name and a byte slice and writes
-// the contents to a .txt file.
-func (g *ghost) writeJSON(name string, data []byte) {
+// writeData takes in a file name and a byte slice and writes
+// the contents to a file.
+func (g *ghost) writeData(name string, data []byte) {
 	g.infoLog.Printf("Writing %s", name)
 	f, err := os.Create(name)
 	if err != nil {
@@ -49,7 +51,7 @@ func (g *ghost) searchMapWriter(query interface{}, data map[string][]string) {
 		return
 	}
 
-	g.writeJSON(name, b)
+	g.writeData(name, b)
 
 }
 
@@ -133,4 +135,22 @@ func (g *ghost) getInputURL() {
 	if g.config.url == "" {
 		g.errorLog.Fatal("Missing input url.")
 	}
+}
+
+// getDomain takes in the URL and returns the domain and any error.
+func (g *ghost) getDomain(full string) (string, error) {
+	u, err := url.Parse(full)
+	if err != nil {
+		return "", err
+	}
+
+	var domain string
+	if strings.HasPrefix(u.Host, "www") {
+		parts := strings.Split(u.Host, ".")
+		domain = strings.Join(parts[1:], ".")
+	} else {
+		domain = u.Host
+	}
+
+	return domain, nil
 }
