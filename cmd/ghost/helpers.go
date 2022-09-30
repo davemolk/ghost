@@ -73,7 +73,7 @@ func (g *ghost) getQuery() bool {
 		g.query = g.config.term
 		return true
 	default:
-		g.errorLog.Println("No query submitted.")
+		g.errorLog.Println("No query submitted. Checking for snapshots...")
 		return false
 	}
 }
@@ -132,8 +132,21 @@ func (g *ghost) getInputURL() {
 	if err := s.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to read input: %v", err)
 	}
-	if g.config.url == "" {
+	if g.config.url != "" {
+		g.validateURL(g.config.url)
+	} else {
 		g.errorLog.Fatal("Missing input url.")
+	}
+
+}
+
+// validateURL is a boolean check to see if a string is a valid URL. 
+// It isn't bulletproof, but it should work for the scope of this
+// project.
+func (g *ghost) validateURL(myURL string) {
+	u, err := url.Parse(myURL)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		g.errorLog.Fatalf("%s is not a valid URL, please try again\n", myURL)
 	}
 }
 
@@ -153,4 +166,13 @@ func (g *ghost) getDomain(full string) (string, error) {
 	}
 
 	return domain, nil
+}
+
+// getHost takes in the URL and returns the host and any error.
+func (g *ghost) getHost(full string) (string, error) {
+	u, err := url.Parse(full)
+	if err != nil {
+		return "", err
+	}
+	return u.Host, nil
 }

@@ -80,17 +80,26 @@ func main() {
 		searches: searches,
 	}
 
-	if config.url == "" {
+	if config.url != "" {
+		g.validateURL(config.url)
+	} else {
 		g.getInputURL()
 	}
 
 	var wg sync.WaitGroup
 
+	host, err := g.getHost(g.config.url)
+	if err != nil {
+		g.errorLog.Printf("getHost error: %v\n", err)
+	}
+	wg.Add(1)
+	go g.getIP(&wg, host)
+
 	domain, err := g.getDomain(g.config.url)
 	if err != nil {
-		g.errorLog.Println("91", err)
+		g.errorLog.Printf("getDomain error: %v\n", err)
 	}
-	if domain != "" {
+	if domain != "" { // NEED THIS?
 		wg.Add(1)
 		go g.whoisLookup(&wg, domain, config.timeout)
 	}
@@ -101,7 +110,7 @@ func main() {
 
 	g.client = g.makeClient(config.timeout)
 
-	// get all captured resources for URL prefix
+	// get all captured resources for given URL prefix
 	wg.Add(1)
 	go g.getResources(&wg, g.client, g.config.url)
 
@@ -127,7 +136,6 @@ func main() {
 		filteredSnaps = append(filteredSnaps, v[1])
 	}
 
-	// var wg sync.WaitGroup
 	tokens := make(chan struct{}, config.gophers)
 
 	for _, timestamp := range filteredSnaps {
@@ -146,6 +154,7 @@ func main() {
 			g.parsePage(string(page), url, g.query)
 		}(timestamp)
 	}
+
 	wg.Wait()
 
 	g.searchMapWriter(g.query, g.searches.searches)

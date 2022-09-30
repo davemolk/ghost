@@ -97,7 +97,7 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 
 	g.writeData("snaps.json", data)
 
-	g.infoLog.Printf("found %d snapshot(s)", len(snaps[1:]))
+	g.infoLog.Printf("Found %d snapshot(s).", len(snaps[1:]))
 
 	// leave off the key
 	return snaps[1:], nil
@@ -158,6 +158,31 @@ func (g *ghost) whoisLookup(wg *sync.WaitGroup, domain string, timeout int) {
 	if len(buff) > 0 {
 		g.writeData("whois.txt", buff)
 	} else {
-		fmt.Println("no results for whois")
+		fmt.Println("No results for whois.")
 	}
+}
+
+// getIP takes in a host and writes the IPv4 and IPv6 addresses 
+// to a file.
+func (g *ghost) getIP(wg *sync.WaitGroup, host string) {
+	defer wg.Done()
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		g.errorLog.Println("unable to look up IP")
+		return
+	}
+
+	var ipByte []byte
+	for _, ip := range ips {
+		b, err := ip.MarshalText()
+		if err != nil {
+			g.errorLog.Println("marshal error in getIP")
+			return
+		}
+		ipByte = append(ipByte, b...)
+		// add breaks
+		ipByte = append(ipByte, byte(0x0A))
+	}
+
+	g.writeData("ip.txt", ipByte)
 }
