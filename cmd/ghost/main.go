@@ -126,6 +126,9 @@ func main() {
 		g.errorLog.Fatal(err)
 	}
 
+	// wait here in case of early exit cause no query
+	wg.Wait()
+	
 	if !validQuery {
 		g.infoLog.Print("Snapshots retrieved and saved to file. Exiting...")
 		os.Exit(1)
