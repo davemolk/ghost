@@ -140,7 +140,7 @@ func (g *ghost) getInputURL() {
 
 }
 
-// validateURL is a boolean check to see if a string is a valid URL. 
+// validateURL is a boolean check to see if a string is a valid URL.
 // It isn't bulletproof, but it should work for the scope of this
 // project.
 func (g *ghost) validateURL(myURL string) {

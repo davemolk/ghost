@@ -127,7 +127,8 @@ func main() {
 	}
 
 	if !validQuery {
-		g.infoLog.Fatal("Snapshots retrieved and saved to file. Exiting...")
+		g.infoLog.Print("Snapshots retrieved and saved to file. Exiting...")
+		os.Exit(1)
 	}
 
 	// extract timestamps from snaps

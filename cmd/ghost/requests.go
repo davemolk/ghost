@@ -131,9 +131,9 @@ func (g *ghost) whoisLookup(wg *sync.WaitGroup, domain string, timeout int) {
 	port := "43"
 	server := "whois.iana.org"
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout) * time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)
 	defer cancel()
-	
+
 	var d = &net.Dialer{}
 	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(server, port))
 	if err != nil {
@@ -162,7 +162,7 @@ func (g *ghost) whoisLookup(wg *sync.WaitGroup, domain string, timeout int) {
 	}
 }
 
-// getIP takes in a host and writes the IPv4 and IPv6 addresses 
+// getIP takes in a host and writes the IPv4 and IPv6 addresses
 // to a file.
 func (g *ghost) getIP(wg *sync.WaitGroup, host string) {
 	defer wg.Done()

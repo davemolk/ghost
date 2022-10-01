@@ -1,12 +1,13 @@
 # ghost
-Get and parse a URL's Wayback Machine history. Save all archived links for that URL prefix while you're at it.
+Get and parse a URL's Wayback Machine history, save all archived links, run a whois lookup, and get IP addresses while you're at it.
 
 ![demo](ghost.gif)
 
 ## Overview
 * Supply a URL and get a file containing all archived snapshots and another containing all archived links for that URL prefix. Use -term, -terms, or -regex, to scan each snapshot for a specific word, a list of words (input as a .txt file), or with a regular expression. All search results are saved to a file.
 * Customize your search with advanced query filtering.
-* In addition to exact URL matching (default), ghost also supports URL matching based on -domain, -host, and -prefix.
+* In addition to exact URL matching (default), ghost supports URL matching based on -domain, -host, and -prefix.
+* ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses for the submitted URL, writing the data to a file in each case. 
 
 ## Example Usage
 (find the two most recent results from https://go.dev, starting at 9/22/2022 and using a 10-second timeout.)
@@ -75,9 +76,11 @@ Alternatively, use one of the binaries available in the release.
 * Occasionally, a limit of -1 erroneously returns no results (this also happens when using curl or a browser). If you know you should be seeing something and this happens, use limit of -2.
 * The query string in formURL contains "fastLatest=true." I haven't noticed an appreciable difference, but it can't hurt, right? Visit [here](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server) for more details.
 * The query string also contains &collapse=digest, which collapses adjacent digests for less cluttered results.
+* The whois lookup currently tries just "whois.iana.org." This could expand if there was interest in doing so.
 
 ## Changelog
-*    **2022-09-27** : ghost v1.0
+*    **2022-09-30** : add whois and IP lookup.
+*    **2022-09-27** : release ghost v1.0
 
 ## Support
 * Like ghost? Use it, star it, and share with your friends!
