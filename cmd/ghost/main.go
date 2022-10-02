@@ -91,15 +91,15 @@ func main() {
 	host, err := g.getHost(g.config.url)
 	if err != nil {
 		g.errorLog.Printf("getHost error: %v\n", err)
+	} else {
+		wg.Add(1)
+		go g.getIP(&wg, host)
 	}
-	wg.Add(1)
-	go g.getIP(&wg, host)
 
 	domain, err := g.getDomain(g.config.url)
 	if err != nil {
 		g.errorLog.Printf("getDomain error: %v\n", err)
-	}
-	if domain != "" { // NEED THIS?
+	} else {
 		wg.Add(1)
 		go g.whoisLookup(&wg, domain, config.timeout)
 	}
@@ -117,20 +117,23 @@ func main() {
 	// check Wayback Machine
 	body, err := g.getData(u, g.client)
 	if err != nil {
+		wg.Wait() // let resource gathering finish
 		g.errorLog.Fatal(err)
 	}
 
 	// also saves the snaps to a .json file
 	snaps, err := g.getSnaps(body)
 	if err != nil {
+		wg.Wait() // let resource gathering finish
 		g.errorLog.Fatal(err)
 	}
 
 	// wait here in case of early exit cause no query
 	wg.Wait()
-	
+
 	if !validQuery {
-		g.infoLog.Print("Snapshots retrieved and saved to file. Exiting...")
+		g.infoLog.Println("Snapshots retrieved and saved to file. Exiting...")
+		g.infoLog.Printf("Took: %f seconds\n", time.Since(start).Seconds())
 		os.Exit(1)
 	}
 
@@ -163,5 +166,5 @@ func main() {
 
 	g.searchMapWriter(g.query, g.searches.searches)
 
-	fmt.Printf("Took: %f seconds\n", time.Since(start).Seconds())
+	g.infoLog.Printf("Took: %f seconds\n", time.Since(start).Seconds())
 }

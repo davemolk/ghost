@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -115,12 +116,77 @@ func (g *ghost) getResources(wg *sync.WaitGroup, client *http.Client, url string
 	body, err := g.getData(u, client)
 	if err != nil {
 		g.errorLog.Printf("getResources unsuccessful: %v", err)
+		return
 	}
 	if len(body) > 0 {
+		g.sortData(body)
 		g.writeData("allResources.json", body)
 	} else {
 		g.errorLog.Println("no resources found via web.archive.org")
 	}
+}
+
+// sortData takes in a byte slice, unmarshals it, and creates two subsets
+// to reflect whether or not each URL in the data set is unique. The two
+// subsets are then printed to a file.
+func (g *ghost) sortData(data []byte) {
+	g.infoLog.Println("Sorting URLs.")
+
+	unique := [][]string{
+		{"original", "mimetype", "timestamp", "endtimestamp", "groupcount", "uniqcount"},
+	}
+	multiple := [][]string{
+		{"original", "mimetype", "timestamp", "endtimestamp", "groupcount", "uniqcount"},
+	}
+
+	var s [][]string
+
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		g.errorLog.Printf("sortData unmarshal error: %v\n", err)
+		return
+	}
+
+	// skip the key
+	for _, v := range s[1:] {
+		// check uniqcount field in snapshot
+		if g.isUnique(v[5]) {
+			unique = append(unique, v)
+		} else {
+			multiple = append(multiple, v)
+		}
+	}
+	if len(unique) > 0 {
+		b, err := g.JSON(unique)
+		if err != nil {
+			g.errorLog.Printf("sortData marshal error: %v\n", err)
+			return
+		}
+		g.writeData("unique.json", b)
+	}
+	if len(multiple) > 0 {
+		b, err := g.JSON(multiple)
+		if err != nil {
+			g.errorLog.Printf("sortData marshal error: %v\n", err)
+			return
+		}
+		g.writeData("multiple.json", b)
+	}
+}
+
+// isUnique takes in a string and compares it to "1", returning true
+// if they match and false otherwise.
+func (g *ghost) isUnique(s string) bool {
+	return s == "1"
+}
+
+// JSON uses NewEncoder over Marshal in order to avoid the escaped HTML.
+func (g *ghost) JSON(data [][]string) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	encoder := json.NewEncoder(buf)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(data)
+	return bytes.TrimRight(buf.Bytes(), "\n"), err
 }
 
 // whoisLookup checks the "whois.iana.org" server to find information about the domain. Any
@@ -158,7 +224,7 @@ func (g *ghost) whoisLookup(wg *sync.WaitGroup, domain string, timeout int) {
 	if len(buff) > 0 {
 		g.writeData("whois.txt", buff)
 	} else {
-		fmt.Println("No results for whois.")
+		g.infoLog.Println("No results for whois.")
 	}
 }
 

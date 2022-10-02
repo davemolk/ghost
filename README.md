@@ -4,10 +4,20 @@ Get and parse a URL's Wayback Machine history, save all archived links, run a wh
 ![demo](ghost.gif)
 
 ## Overview
-* Supply a URL and get a file containing all archived snapshots and another containing all archived links for that URL prefix. Use -term, -terms, or -regex, to scan each snapshot for a specific word, a list of words (input as a .txt file), or with a regular expression. All search results are saved to a file.
+* Supply a URL and get a file containing all archived snapshots. Use -term, -terms, or -regex, to scan each snapshot for a specific word, a list of words (input as a .txt file), or with a regular expression. All search results are saved to a file.
 * Customize your search with advanced query filtering.
 * In addition to exact URL matching (default), ghost supports URL matching based on -domain, -host, and -prefix.
+* ghost retrieves all archived links for the submitted URL prefix, writes the whole set to a file, and parses the set into URLs with a unique snapshot and URLs with multiple iterations. These subsets are written to individual files. 
 * ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses for the submitted URL, writing the data to a file in each case. 
+* All told, entering a URL gets you the following: 
+    * allResources.json
+    * ip.txt
+    * multiple.json
+    * snaps.json
+    * unique.json
+    * whois.txt. 
+* Adding a query yields all of the above plus:
+    * termResults.json.
 
 ## Example Usage
 (find the two most recent results from https://go.dev, starting at 9/22/2022 and using a 10-second timeout.)
@@ -79,8 +89,9 @@ Alternatively, use one of the binaries available in the release.
 * The whois lookup currently tries just "whois.iana.org." This could expand if there was interest in doing so.
 
 ## Changelog
-*    **2022-09-30** : add whois and IP lookup.
-*    **2022-09-27** : release ghost v1.0
+*    **2022-10-02**: add unique and multiple sorting of archived URLs.
+*    **2022-09-30**: add whois and IP lookup.
+*    **2022-09-27**: release ghost v1.0
 
 ## Support
 * Like ghost? Use it, star it, and share with your friends!

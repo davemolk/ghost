@@ -8,6 +8,8 @@ termsResults.json
 allResources.json
 whois.txt
 ip.txt
+unique.json
+multiple.json
 .DS_Store
 # Binaries for programs and plugins
 *.exe
