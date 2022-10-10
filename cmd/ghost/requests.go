@@ -68,35 +68,48 @@ func (g *ghost) makeRequest(url string, client *http.Client) (*http.Response, er
 	return resp, nil
 }
 
-// checkRobots checks the Wayback Machine for the inputURL/robots.txt
-// and writes the results to a file if inputURL/robots.txt exists.
-func (g *ghost) checkRobots(wg *sync.WaitGroup, client *http.Client, url string) {
+// checkAsset checks if the Wayback Machine has a snapshot for a given URL.
+// If it does, checkAsset will get the snapshot and write its contents to
+// a file.
+func (g *ghost) checkAsset(wg *sync.WaitGroup, client *http.Client, url, filename string) {
 	defer wg.Done()
-	var u string
-	if strings.HasSuffix(url, "/") {
-		u = fmt.Sprintf("%srobots.txt/", url)
-	} else {
-		u = fmt.Sprintf("%s/robots.txt/", url)
-	}
+
+	// call function to parse filename and create URL
+	u := g.createURL(url, filename)
 
 	available := g.checkAvailable(u, client)
 	if available == "" {
-		g.errorLog.Println("unable to get robots.txt")
+		g.errorLog.Printf("unable to get %s\n", u)
 		return
 	}
 
 	body, err := g.getData(u, client)
 	if err != nil {
-		g.errorLog.Printf("unable to get robots.txt: %v\n", err)
+		g.errorLog.Printf("unable to get %s: %v\n", u, err)
 		return
 	}
 	if len(body) > 0 {
-		g.writeData("data/robots.txt", body)
+		g.writeData(filename, body)
 	} else {
-		g.errorLog.Println("no robots.txt found")
+		g.errorLog.Printf("no data at %s\n", u)
 	}
 }
 
+// createURL takes in a URL and a filename and uses the filename to
+// determine whether to return URL/robots.txt/ or URL/sitemap.xml/.
+func (g *ghost) createURL(url, filename string) string {
+	url = strings.TrimSuffix(url, "/")
+	var u string
+	if strings.HasSuffix(filename, "robots.txt") {
+		u = fmt.Sprintf("%s/robots.txt", url)
+	} else {
+		u = fmt.Sprintf("%s/sitemap.xml", url)
+	}
+	return u
+}
+
+// wayback struct for storing the information coming back
+// as json from the Wayback Machine API availability endpoint.
 type wayback struct {
 	ArchivedSnapshots struct {
 		Closest struct {
@@ -108,6 +121,10 @@ type wayback struct {
 	} `json:"archived_snapshots"`
 }
 
+// checkAvailable takes in a url and a client and checks the
+// Wayback Machine API availability endpoint. If the url is not
+// available, an empty string is returned. Otherwise, checkAvailable
+// returns the URL containing the latest snapshot for the submitted site.
 func (g *ghost) checkAvailable(url string, client *http.Client) string {
 	const prefix = "http://archive.org/wayback/available?url="
 	u := fmt.Sprintf("%s%s", prefix, url)
@@ -168,10 +185,10 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 	return snaps[1:], nil
 }
 
-// getResources leverages the Wayback Machine API responsible for populating
+// archivedURLs leverages the Wayback Machine API responsible for populating
 // all captured URLs associated with a given URL prefix. The data is written
-// to an allResources.json file.
-func (g *ghost) getResources(wg *sync.WaitGroup, client *http.Client, url string) {
+// to an archivedURLs.json file.
+func (g *ghost) archivedURLs(wg *sync.WaitGroup, client *http.Client, url string) {
 	defer wg.Done()
 	now := time.Now()
 	curr := now.UnixMilli()
@@ -179,14 +196,14 @@ func (g *ghost) getResources(wg *sync.WaitGroup, client *http.Client, url string
 	u := fmt.Sprintf("https://web.archive.org/web/timemap/json?url=%s%s%d", url, guts, curr)
 	body, err := g.getData(u, client)
 	if err != nil {
-		g.errorLog.Printf("getResources unsuccessful: %v", err)
+		g.errorLog.Printf("archivedURLs unsuccessful: %v", err)
 		return
 	}
 	if len(body) > 0 {
 		g.sortData(body)
-		g.writeData("data/allResources.json", body)
+		g.writeData("data/archivedURLs.json", body)
 	} else {
-		g.errorLog.Println("no resources found via web.archive.org")
+		g.errorLog.Println("no archived links on web.archive.org")
 	}
 }
 

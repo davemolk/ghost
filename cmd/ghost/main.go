@@ -115,17 +115,19 @@ func main() {
 
 	g.client = g.makeClient(config.timeout)
 
-	// check for robots.txt
+	// check Wayback Machine for robots.txt
 	wg.Add(1)
-	go g.checkRobots(&wg, g.client, g.config.url)
+	go g.checkAsset(&wg, g.client, g.config.url, "data/robots.txt")
 
-	// check for sitemap.xml
-
-	// get all captured resources for given URL prefix
+	// check Wayback Machine for sitemap.xml
 	wg.Add(1)
-	go g.getResources(&wg, g.client, g.config.url)
+	go g.checkAsset(&wg, g.client, g.config.url, "data/sitemap.xml")
 
-	// check Wayback Machine
+	// get all archived URLs for given URL prefix
+	wg.Add(1)
+	go g.archivedURLs(&wg, g.client, g.config.url)
+
+	// check Wayback Machine for snapshots
 	body, err := g.getData(u, g.client)
 	if err != nil {
 		wg.Wait() // let resource gathering finish

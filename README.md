@@ -1,5 +1,5 @@
 # ghost
-For passive recon...get and parse a URL's Wayback Machine history, save all archived links, run a whois lookup, and get IP addresses while you're at it.
+a tool for passive recon...ghost gets you the Wayback Machine history for a URL and lets you parse it, saves all archived links, saves an archived robots.txt and sitemap.xml, runs a whois lookup, and gets IP addresses while you're at it.
 
 ![demo](ghost.gif)
 
@@ -8,11 +8,14 @@ For passive recon...get and parse a URL's Wayback Machine history, save all arch
 * Customize your search with advanced query filtering.
 * In addition to exact URL matching (default), ghost supports URL matching based on -domain, -host, and -prefix.
 * ghost retrieves all archived links for the submitted URL prefix, writes the whole set to a file, and parses the set into URLs with a unique snapshot and URLs with multiple iterations. These subsets are written to individual files. 
-* ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses for the submitted URL, writing the data to a file in each case. 
+* You'll also  
+ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses for the submitted URL, writing the data to a file in each case. 
 * All told, entering a URL gets you the following: 
-    * allResources.json
+    * archivedURLs.json
     * ip.txt
     * multiple.json
+    * robots.txt
+    * sitemap.xml
     * snaps.json
     * unique.json
     * whois.txt. 
@@ -83,15 +86,11 @@ go install github.com/davemolk/ghost/cmd/ghost@latest
 Alternatively, use one of the binaries available in the release.
 
 ## Additional Notes
+* Most of ghost's functionality is dependent on the speed of the Wayback Machine APIs. If a search is going slowly or timing out, try running it again before increasing the timeout value.
 * Occasionally, a limit of -1 erroneously returns no results (this also happens when using curl or a browser). If you know you should be seeing something and this happens, use limit of -2.
 * The query string in formURL contains "fastLatest=true." I haven't noticed an appreciable difference, but it can't hurt, right? Visit [here](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server) for more details.
 * The query string also contains &collapse=digest, which collapses adjacent digests for less cluttered results.
 * The whois lookup currently tries just "whois.iana.org." This could expand if there was interest in doing so.
-
-## Changelog
-*    **2022-10-02**: add unique and multiple sorting of archived URLs.
-*    **2022-09-30**: add whois and IP lookup.
-*    **2022-09-27**: release ghost v1.0
 
 ## Support
 * Like ghost? Use it, star it, and share with your friends!
