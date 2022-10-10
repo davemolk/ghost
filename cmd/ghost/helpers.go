@@ -38,11 +38,11 @@ func (g *ghost) searchMapWriter(query interface{}, data map[string][]string) {
 	var name string
 	switch query.(type) {
 	case string:
-		name = "termResults.json"
+		name = "data/termResults.json"
 	case []string:
-		name = "termsResults.json"
+		name = "data/termsResults.json"
 	case *regexp.Regexp:
-		name = "regexResults.json"
+		name = "data/regexResults.json"
 	}
 
 	b, err := json.Marshal(data)
@@ -73,7 +73,7 @@ func (g *ghost) getQuery() bool {
 		g.query = g.config.term
 		return true
 	default:
-		g.errorLog.Println("No query submitted. Checking for snapshots...")
+		g.infoLog.Println("No query submitted. Checking for snapshots...")
 		return false
 	}
 }

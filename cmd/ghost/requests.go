@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -67,6 +68,69 @@ func (g *ghost) makeRequest(url string, client *http.Client) (*http.Response, er
 	return resp, nil
 }
 
+// checkRobots checks the Wayback Machine for the inputURL/robots.txt
+// and writes the results to a file if inputURL/robots.txt exists.
+func (g *ghost) checkRobots(wg *sync.WaitGroup, client *http.Client, url string) {
+	defer wg.Done()
+	var u string
+	if strings.HasSuffix(url, "/") {
+		u = fmt.Sprintf("%srobots.txt/", url)
+	} else {
+		u = fmt.Sprintf("%s/robots.txt/", url)
+	}
+
+	available := g.checkAvailable(u, client)
+	if available == "" {
+		g.errorLog.Println("unable to get robots.txt")
+		return
+	}
+
+	body, err := g.getData(u, client)
+	if err != nil {
+		g.errorLog.Printf("unable to get robots.txt: %v\n", err)
+		return
+	}
+	if len(body) > 0 {
+		g.writeData("data/robots.txt", body)
+	} else {
+		g.errorLog.Println("no robots.txt found")
+	}
+}
+
+type wayback struct {
+	ArchivedSnapshots struct {
+		Closest struct {
+			Available bool   `json:"available"`
+			URL       string `json:"url"`
+			Timestamp string `json:"timestamp"`
+			Status    string `json:"status"`
+		} `json:"closest"`
+	} `json:"archived_snapshots"`
+}
+
+func (g *ghost) checkAvailable(url string, client *http.Client) string {
+	const prefix = "http://archive.org/wayback/available?url="
+	u := fmt.Sprintf("%s%s", prefix, url)
+	wayback := &wayback{}
+	g.infoLog.Printf("checking: %s", u)
+	body, err := g.getData(u, client)
+	if err != nil {
+		g.errorLog.Printf("unable to get %s: %v\n", u, err)
+		return ""
+	}
+	err = json.Unmarshal(body, &wayback)
+	if err != nil {
+		g.errorLog.Printf("%s unmarshal error: %v\n", u, err)
+		return ""
+	}
+	if !wayback.ArchivedSnapshots.Closest.Available {
+		g.infoLog.Printf("%s not available\n", u)
+		return ""
+	} else {
+		return wayback.ArchivedSnapshots.Closest.URL
+	}
+}
+
 // getData takes in a url and a client and returns the response body as
 // a slice of bytes.
 func (g *ghost) getData(url string, client *http.Client) ([]byte, error) {
@@ -96,7 +160,7 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 		return nil, errors.New("no wayback machine snapshots found. If using limit=-1, try limit=-2")
 	}
 
-	g.writeData("snaps.json", data)
+	g.writeData("data/snaps.json", data)
 
 	g.infoLog.Printf("Found %d snapshot(s).", len(snaps[1:]))
 
@@ -120,7 +184,7 @@ func (g *ghost) getResources(wg *sync.WaitGroup, client *http.Client, url string
 	}
 	if len(body) > 0 {
 		g.sortData(body)
-		g.writeData("allResources.json", body)
+		g.writeData("data/allResources.json", body)
 	} else {
 		g.errorLog.Println("no resources found via web.archive.org")
 	}
@@ -162,7 +226,7 @@ func (g *ghost) sortData(data []byte) {
 			g.errorLog.Printf("sortData marshal error: %v\n", err)
 			return
 		}
-		g.writeData("unique.json", b)
+		g.writeData("data/unique.json", b)
 	}
 	if len(multiple) > 0 {
 		b, err := g.JSON(multiple)
@@ -170,7 +234,7 @@ func (g *ghost) sortData(data []byte) {
 			g.errorLog.Printf("sortData marshal error: %v\n", err)
 			return
 		}
-		g.writeData("multiple.json", b)
+		g.writeData("data/multiple.json", b)
 	}
 }
 
@@ -222,7 +286,7 @@ func (g *ghost) whoisLookup(wg *sync.WaitGroup, domain string, timeout int) {
 	}
 
 	if len(buff) > 0 {
-		g.writeData("whois.txt", buff)
+		g.writeData("data/whois.txt", buff)
 	} else {
 		g.infoLog.Println("No results for whois.")
 	}
@@ -250,5 +314,5 @@ func (g *ghost) getIP(wg *sync.WaitGroup, host string) {
 		ipByte = append(ipByte, byte(0x0A))
 	}
 
-	g.writeData("ip.txt", ipByte)
+	g.writeData("data/ip.txt", ipByte)
 }

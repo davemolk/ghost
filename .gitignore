@@ -10,7 +10,9 @@ whois.txt
 ip.txt
 unique.json
 multiple.json
+robots.txt
 .DS_Store
+data/
 # Binaries for programs and plugins
 *.exe
 *.exe~

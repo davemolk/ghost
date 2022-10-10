@@ -1,5 +1,5 @@
 # ghost
-Get and parse a URL's Wayback Machine history, save all archived links, run a whois lookup, and get IP addresses while you're at it.
+For passive recon...get and parse a URL's Wayback Machine history, save all archived links, run a whois lookup, and get IP addresses while you're at it.
 
 ![demo](ghost.gif)
 

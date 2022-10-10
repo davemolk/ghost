@@ -88,6 +88,11 @@ func main() {
 
 	var wg sync.WaitGroup
 
+	err := os.Mkdir("data", 0755)
+	if err != nil {
+		g.errorLog.Fatalf("unable to make data folder: %v", err)
+	}
+
 	host, err := g.getHost(g.config.url)
 	if err != nil {
 		g.errorLog.Printf("getHost error: %v\n", err)
@@ -109,6 +114,12 @@ func main() {
 	g.infoLog.Printf("Wayback Machine URL: %s\n", u)
 
 	g.client = g.makeClient(config.timeout)
+
+	// check for robots.txt
+	wg.Add(1)
+	go g.checkRobots(&wg, g.client, g.config.url)
+
+	// check for sitemap.xml
 
 	// get all captured resources for given URL prefix
 	wg.Add(1)
