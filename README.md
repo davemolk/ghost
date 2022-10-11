@@ -10,7 +10,7 @@ a tool for passive recon...ghost gets you the Wayback Machine history for a URL 
 * ghost retrieves all archived links for the submitted URL prefix, writes the whole set to a file, and parses the set into URLs with a unique snapshot and URLs with multiple iterations. These subsets are written to individual files. 
 * You'll also  
 ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses for the submitted URL, writing the data to a file in each case. 
-* All told, entering a URL gets you the following: 
+* All told, entering a URL gets you the following, all without touching the target URL: 
     * archivedURLs.json
     * ip.txt
     * multiple.json
@@ -18,7 +18,7 @@ ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses fo
     * sitemap.xml
     * snaps.json
     * unique.json
-    * whois.txt. 
+    * whois.txt 
 * Adding a query yields all of the above plus:
     * termResults.json.
 

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -34,7 +33,6 @@ type filters struct {
 }
 
 type ghost struct {
-	client   *http.Client
 	config   config
 	errorLog *log.Logger
 	infoLog  *log.Logger
@@ -113,22 +111,20 @@ func main() {
 	u := g.formURL(g.config.url, config.filters)
 	g.infoLog.Printf("Wayback Machine URL: %s\n", u)
 
-	g.client = g.makeClient(config.timeout)
-
 	// check Wayback Machine for robots.txt
 	wg.Add(1)
-	go g.checkAsset(&wg, g.client, g.config.url, "data/robots.txt")
+	go g.checkAsset(&wg, g.config.url, "data/robots.txt", config.timeout)
 
 	// check Wayback Machine for sitemap.xml
 	wg.Add(1)
-	go g.checkAsset(&wg, g.client, g.config.url, "data/sitemap.xml")
+	go g.checkAsset(&wg, g.config.url, "data/sitemap.xml", config.timeout)
 
 	// get all archived URLs for given URL prefix
 	wg.Add(1)
-	go g.archivedURLs(&wg, g.client, g.config.url)
+	go g.archivedURLs(&wg, g.config.url, config.timeout)
 
 	// check Wayback Machine for snapshots
-	body, err := g.getData(u, g.client)
+	body, err := g.getData(u, config.timeout)
 	if err != nil {
 		wg.Wait() // let resource gathering finish
 		g.errorLog.Fatal(err)
@@ -164,7 +160,7 @@ func main() {
 		go func(t string) {
 			defer wg.Done()
 			url := fmt.Sprintf("https://web.archive.org/web/%s/%s", t, g.config.url)
-			page, err := g.getData(url, g.client)
+			page, err := g.getData(url, config.timeout)
 			if err != nil {
 				g.errorLog.Printf("getData error for %s: %v\n", url, err)
 				<-tokens

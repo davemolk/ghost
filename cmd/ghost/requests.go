@@ -15,13 +15,6 @@ import (
 	"time"
 )
 
-// makeClient takes in a timeout (in milliseconds) and returns a client.
-func (g *ghost) makeClient(timeout int) *http.Client {
-	return &http.Client{
-		Timeout: time.Duration(timeout) * time.Millisecond,
-	}
-}
-
 // getUA returns a string slice of ten user agents.
 func (g *ghost) getUA() []string {
 	return []string{
@@ -46,44 +39,22 @@ func (g *ghost) randomUA() string {
 	return userAgents[rando]
 }
 
-// makeRequest takes in a url and a client and returns an http.Response and an error.
-func (g *ghost) makeRequest(url string, client *http.Client) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	uAgent := g.randomUA()
-	req.Header.Set("User-Agent", uAgent)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != 200 {
-		resp.Body.Close()
-		return nil, fmt.Errorf("status code: %d", resp.StatusCode)
-	}
-
-	return resp, nil
-}
-
 // checkAsset checks if the Wayback Machine has a snapshot for a given URL.
 // If it does, checkAsset will get the snapshot and write its contents to
 // a file.
-func (g *ghost) checkAsset(wg *sync.WaitGroup, client *http.Client, url, filename string) {
+func (g *ghost) checkAsset(wg *sync.WaitGroup, url, filename string, timeout int) {
 	defer wg.Done()
 
 	// call function to parse filename and create URL
 	u := g.createURL(url, filename)
 
-	available := g.checkAvailable(u, client)
+	available := g.checkAvailable(u, timeout)
 	if available == "" {
 		g.errorLog.Printf("unable to get %s\n", u)
 		return
 	}
 
-	body, err := g.getData(u, client)
+	body, err := g.getData(u, timeout)
 	if err != nil {
 		g.errorLog.Printf("unable to get %s: %v\n", u, err)
 		return
@@ -121,20 +92,22 @@ type wayback struct {
 	} `json:"archived_snapshots"`
 }
 
-// checkAvailable takes in a url and a client and checks the
+// checkAvailable takes in a url and a timeout and checks the
 // Wayback Machine API availability endpoint. If the url is not
 // available, an empty string is returned. Otherwise, checkAvailable
 // returns the URL containing the latest snapshot for the submitted site.
-func (g *ghost) checkAvailable(url string, client *http.Client) string {
+func (g *ghost) checkAvailable(url string, timeout int) string {
 	const prefix = "http://archive.org/wayback/available?url="
 	u := fmt.Sprintf("%s%s", prefix, url)
-	wayback := &wayback{}
 	g.infoLog.Printf("checking: %s", u)
-	body, err := g.getData(u, client)
+
+	body, err := g.getData(u, timeout)
 	if err != nil {
 		g.errorLog.Printf("unable to get %s: %v\n", u, err)
 		return ""
 	}
+
+	wayback := &wayback{}
 	err = json.Unmarshal(body, &wayback)
 	if err != nil {
 		g.errorLog.Printf("%s unmarshal error: %v\n", u, err)
@@ -148,13 +121,29 @@ func (g *ghost) checkAvailable(url string, client *http.Client) string {
 	}
 }
 
-// getData takes in a url and a client and returns the response body as
+// getData takes in a url and a timeout and returns the response body as
 // a slice of bytes.
-func (g *ghost) getData(url string, client *http.Client) ([]byte, error) {
-	resp, err := g.makeRequest(url, client)
+func (g *ghost) getData(url string, timeout int) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("makeRequest error: %w", err)
+		return nil, err
 	}
+
+	uAgent := g.randomUA()
+	req.Header.Set("User-Agent", uAgent)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		resp.Body.Close()
+		return nil, fmt.Errorf("status code: %d", resp.StatusCode)
+	}
+
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
@@ -188,13 +177,13 @@ func (g *ghost) getSnaps(data []byte) ([][]string, error) {
 // archivedURLs leverages the Wayback Machine API responsible for populating
 // all captured URLs associated with a given URL prefix. The data is written
 // to an archivedURLs.json file.
-func (g *ghost) archivedURLs(wg *sync.WaitGroup, client *http.Client, url string) {
+func (g *ghost) archivedURLs(wg *sync.WaitGroup, url string, timeout int) {
 	defer wg.Done()
 	now := time.Now()
 	curr := now.UnixMilli()
 	const guts = "&matchType=prefix&collapse=urlkey&output=json&fl=original%2Cmimetype%2Ctimestamp%2Cendtimestamp%2Cgroupcount%2Cuniqcount&filter=!statuscode%3A%5B45%5D..&limit=10000&_="
 	u := fmt.Sprintf("https://web.archive.org/web/timemap/json?url=%s%s%d", url, guts, curr)
-	body, err := g.getData(u, client)
+	body, err := g.getData(u, timeout)
 	if err != nil {
 		g.errorLog.Printf("archivedURLs unsuccessful: %v", err)
 		return
