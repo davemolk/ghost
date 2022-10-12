@@ -1,16 +1,16 @@
 # ghost
-a tool for passive recon...ghost gets you the Wayback Machine history for a URL and lets you parse it, saves all archived links, saves an archived robots.txt and sitemap.xml, runs a whois lookup, and gets IP addresses while you're at it.
+Use ghost for passive recon: get the Wayback Machine history for a URL, search for term(s) or regular expression matches, save all archived links, save an archived robots.txt and sitemap.xml, run a whois lookup, and get IP addresses, all without touching the target.
 
 ![demo](ghost.gif)
 
 ## Overview
-* Supply a URL and get a file containing all archived snapshots. Use -term, -terms, or -regex, to scan each snapshot for a specific word, a list of words (input as a .txt file), or with a regular expression. All search results are saved to a file.
+* Supply a URL and get a file containing all archived snapshots. Use -term, -terms, or -regex to scan each snapshot for a specific word, a list of words (input as a .txt file), or with a regular expression. All search results are saved to a file.
 * Customize your search with advanced query filtering.
 * In addition to exact URL matching (default), ghost supports URL matching based on -domain, -host, and -prefix.
 * ghost retrieves all archived links for the submitted URL prefix, writes the whole set to a file, and parses the set into URLs with a unique snapshot and URLs with multiple iterations. These subsets are written to individual files. 
-* You'll also  
-ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses for the submitted URL, writing the data to a file in each case. 
-* All told, entering a URL gets you the following, all without touching the target URL: 
+* ghost makes requests for URL/robots.txt and URL/sitemap.xml and writes these to individual files.
+* ghost also performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses for the submitted URL, writing the data to a file in each case. 
+* All told, entering a URL gets you the following (and all without touching the target URL): 
     * archivedURLs.json
     * ip.txt
     * multiple.json
@@ -20,7 +20,7 @@ ghost performs a concurrent whois lookup and gets the IPv4 and IPv6 addresses fo
     * unique.json
     * whois.txt 
 * Adding a query yields all of the above plus:
-    * termResults.json.
+    * termResults.json, termsResults.json, or regexResults.json, depending on the query.
 
 ## Example Usage
 (find the two most recent results from https://go.dev, starting at 9/22/2022 and using a 10-second timeout.)
